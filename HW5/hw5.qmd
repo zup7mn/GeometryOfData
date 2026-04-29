@@ -1,0 +1,182 @@
+---
+author: Logan Foster
+format:
+  html:
+    code-tools: true
+    code-fold: true 
+---
+
+## Problem 1: Metropolis Hasting Independent Sampler
+
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+
+def gauss(x, mu, omega):
+    return (0.5 * omega / np.pi) * np.exp(-0.5 * omega * np.sum((x - mu)**2, axis = -1))
+
+def grad_gauss(x, mu, omega):
+    g = gauss(x, mu, omega)
+    return (-0.5 * omega**2 / np.pi) * (g.reshape((g.shape[0], 1)).repeat(2, axis = 1) * (x - mu))
+
+
+def phi(x):
+    if len(x.shape) == 1:
+        return np.column_stack((x[0], x[1] + 0.25 * np.sin(4.0 * np.pi * x[0])))
+    else:
+        return np.column_stack((x[:, 0], x[:, 1] + 0.25 * np.sin(4.0 * np.pi * x[:, 0])))
+
+# This computes the derivative mapping transpose, times a vector v, that is: dphi(x)^T * v
+def dphi_transpose_dot_v(x, v):
+    return np.column_stack(
+        (
+            v[:, 0] + v[:, 1] * np.pi * np.cos(4.0 * np.pi * x[:, 0]),      # v_1 * 1 + v_2 * pi cos (4 pi x_1)
+            v[:, 1]                                                         # v_1 * 0 + v_2 * 1
+        )
+    )
+
+# Parameters for the pdf
+mu1 = np.array([1.0, 1.0])
+mu2 = np.array([-1.0, -1.0])
+omega1 = 9.0
+omega2 = 9.0
+lambda1 = 0.4
+lambda2 = 0.6
+
+# For taking logs near zero
+epsilon = 1.0e-8
+
+def U(x):
+    e1 = lambda1 * gauss(x, mu1, omega1)
+    e2 = lambda2 * gauss(phi(x), mu2, omega2)
+
+    return -np.log(e1 + e2 + epsilon)
+```
+
+Let's setup the MH sampler.
+
+
+```{python}
+
+## proposal dist is N(x, mu, sigma^2 * I), so a standard gaussian. We'll need to draw samples from this standard normal (simple numpy) and evaluate the likelihood of past samples
+
+
+
+
+class MH_indp_normal():
+    def __init__(self, N = 10000, proposal_var = 1, proposal_mean = np.array([0,0])):
+        self.N = N
+        self.proposal_var = proposal_var
+        self.proposal_mean = proposal_mean
+    
+    # @staticmethod
+    def proposal(self, x):
+        return gauss(x, self.proposal_mean, 1 / self.proposal_var)
+
+    def generate_proposal(self):
+        return np.random.normal(self.proposal_mean, self.proposal_var * np.array([1,1]))
+
+    def target(self, x): # not normalized!!
+        return np.exp(-U(x))
+
+    def sample(self):
+        num_samples = self.N
+        self.samples = np.zeros((num_samples,2))
+        samples = self.samples
+        self.accepted = np.zeros(num_samples - 1)
+
+        for k in range(1, num_samples):
+            x_last = samples[k-1]
+
+            y = self.generate_proposal()
+
+            u = np.random.uniform(0,1)
+
+            A = self.target(y) * self.proposal(x_last) / (self.target(x_last) * self.proposal(y))
+
+            if u < A:
+                samples[k] = y
+                self.accepted[k - 1] = 1
+            else:
+                samples[k] = x_last
+```
+
+
+### Part A $\sigma = 1$
+Running our MH independent sampler with $\sigma = 1$.
+
+```{python}
+N = 10_000
+sampler = MH_indp_normal(proposal_var = 1)
+sampler.sample()
+accept_rate = 100 * sampler.accepted.sum() / N
+print(f"Acceptance rate: {accept_rate: .2f}%")
+```
+
+
+
+```{python}
+# Make grid for plotting
+xcoord = np.linspace(-3.0, 3.0, 201)
+ycoord = np.linspace(-3.0, 3.0, 201)
+xx, yy = np.meshgrid(xcoord, ycoord)
+
+# reshape xx,yy coordinates into N x 2 tensor
+coords = np.column_stack((xx.flatten(), yy.flatten()))
+
+# compute (unnormalized) density function
+dens = np.exp(-U(coords))
+
+# reshape back to the xx,yy grid
+dens = dens.reshape(xx.shape)
+
+# Contour plot
+levels = np.linspace(np.max(dens) / 100, np.max(dens), 99)
+plt.figure(figsize = (10, 10))
+ax = plt.axes()
+ax.set_facecolor("black")
+plt.contourf(xx, yy, dens, levels = levels, cmap = "gist_heat")
+
+samples = sampler.samples
+plt.scatter(samples[:, 0], samples[:,1], s = 1, c = 'white')
+
+plt.title(r"Scattered Samples Generated with $\sigma^2 = 1$")
+plt.grid(color='white', linestyle = '--')
+
+plt.axis('equal')
+plt.show()
+```
+
+
+```{python}
+# Make grid for plotting (shared across all subplots)
+xcoord = np.linspace(-3.0, 3.0, 201)
+ycoord = np.linspace(-3.0, 3.0, 201)
+xx, yy = np.meshgrid(xcoord, ycoord)
+coords = np.column_stack((xx.flatten(), yy.flatten()))
+dens = np.exp(-U(coords)).reshape(xx.shape)
+levels = np.linspace(np.max(dens) / 100, np.max(dens), 99)
+
+fig, axes = plt.subplots(2, 2, figsize=(8, 8), constrained_layout=True)
+
+for ax, var in zip(axes.flatten(), [0.1, 0.5, 1, 2]):
+    sampler = MH_indp_normal(proposal_var = var)
+    sampler.sample()
+    accept_rate = 100 * sampler.accepted.sum() / N
+    print(f"Proposal Variance: {var}    Acceptance rate: {accept_rate: .2f}%")
+
+    ax.set_facecolor("black")
+    ax.contourf(xx, yy, dens, levels = levels, cmap = "gist_heat")
+
+    samples = sampler.samples
+    ax.scatter(samples[:, 0], samples[:, 1], s = 1, c = 'white')
+
+    ax.set_xlim(-3, 3)
+    ax.set_ylim(-3, 3)
+    ax.set_title(f"Scattered Samples Generated with $\\sigma^2 = {var}$ \n Acceptance rate: {accept_rate: .2f}%")
+    ax.grid(color='white', linestyle = '--')
+    ax.set_aspect('equal')
+
+plt.show()
+```

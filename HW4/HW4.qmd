@@ -1,0 +1,859 @@
+---
+title: "Homework 4: Lie Groups and Information Geometry"
+author: "Logan Foster"
+jupyter: "data"
+format:
+  html:
+    code-fold: true
+    code-summary: "Show Code"
+    code-tools: true
+    html-math-method:
+      method: mathjax
+      url: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"
+---
+
+Link to LLM chat session [here](https://claude.ai/share/aa5c1b29-0b18-40f4-8078-b40046df834c).
+
+## Question 1
+
+
+#### Part A
+A Lie Group is a smooth manifold that also forms a group, where the two group operations, multiplication and inverse, are smooth mapping between manifolds. Let's show that
+$\text{SL}(2, \mathbb{R})$ is a Lie Group. 
+
+Showing group properites:
+
+1. Say $A, B, C \in \text{SL}(2, \mathbb{R})$. Then by the rules of matrix multiplication
+$$
+A(BC) = (AB)C
+$$
+
+2. The identity matrix $\mathbf{I} \in \text{SL}(2, \mathbb{R})$, since $\det \mathbf{I} = 1$.
+
+3. Say $A \in \text{SL}(2, \mathbb{R})$. Since $\det A \ne 0, A$ is invertible, and by the properties of the determinant:
+$$
+1 = \det A = \frac{1}{\det A^{-1}} = 1,
+$$
+so $A^{-1} \in \text{SL}(2, \mathbb{R})$.
+
+The $\text{SL}(2, \mathbb{R})$ is clearly a closed subgroup of $\text{GL}(2)$, so therefore it is a matrix group, and inherits the smooth structure of $\text{GL}(2)$, and thus is also a Lie Group ^[Riemann Geometry Notes, page 18.].
+
+#### Part B
+
+To show the homeowork's operation is a group action, we must show that
+
+1. $\mathbf{I} \cdot p = p$,
+2. $(gh) \cdot p = (g \cdot (h \cdot p))$.
+
+The first item is trivial. To prove the second, we must recall from class that if $z = x + i y$, then  
+
+$$
+\left(
+    \begin{pmatrix}
+        a, b \\
+        c, d
+    \end{pmatrix}, z
+\right) = \frac{az + b}{cz + d} = w,
+$$
+and  
+$$
+(\Re (w), \Im (w)) = \left(
+    \begin{pmatrix}
+        a, b \\
+        c, d
+    \end{pmatrix}, (x, y)
+\right).
+$$
+
+This allows us to avoid some nasty algebra:
+
+$$
+\left[
+        \begin{pmatrix}
+            v, w \\
+            x, y
+        \end{pmatrix},
+  \left(
+        \begin{pmatrix}
+            a, b \\
+            c, d
+        \end{pmatrix}
+, z
+\right)
+\right] = 
+    \left(
+        \begin{pmatrix}
+            w, x \\
+            y, v
+        \end{pmatrix},
+        \frac{az + b}{cz + d}
+    \right) = \frac{w(az + b)  + x(cz + d)}{y(az + b) + v(cz + d)}
+$$
+$$
+= \frac{(aw + cv)z + (bw + dx)}{(ay + cv) z + (by + dv)} =
+\left(
+    \begin{pmatrix}
+        aw + cz, bw + dx \\
+        ay + cv, by + dv
+    \end{pmatrix}, z
+\right) =
+\left(
+    \left[
+        \begin{pmatrix}
+            v, w \\
+            x, y
+        \end{pmatrix}
+        \cdot
+        \begin{pmatrix}
+            a, b \\
+            c, d
+        \end{pmatrix}
+    \right], z
+\right)
+$$
+
+So we know our operation is a group action.
+
+#### Part C
+
+$$
+  \left(
+        \begin{pmatrix}
+            a, b \\
+            c, d
+        \end{pmatrix}
+, (0, 1)
+\right) = \frac{1}{\sin^2 \theta + \cos^2 \theta} (\cos \theta \sin \theta - \sin \theta \cos \theta + 0, \cos^2 \theta + \sin^2 \theta) = (0, 1)
+$$
+
+## Question 2
+
+#### Part A
+If our Fisher information metric 
+$$
+g =
+\begin{pmatrix}
+    \frac{1}{\sigma^2}, 0 \\
+    0,  \frac{2}{\sigma^2}
+\end{pmatrix},
+$$
+then
+$$
+g^{-1} =
+\begin{pmatrix}
+    \frac{\sigma^2}{1}, 0 \\
+    0,  \frac{\sigma^2}{2}
+\end{pmatrix}.
+$$
+
+Let $x^1 = \nu, x^2 = \sigma$. Our Christofell symbols are ^[I wrote out all the Cristofell symbols my hand, and asked the LLM to check my answers. It pointed out that I forgot the leading 1/2 twice. I fixed the work I did by hand, and then once I got the same answers, asked the LLM to write out the christofell symbols so as to avoid writing a ton of latex.]
+
+$$
+\Gamma^1_{11} = \frac{1}{2} g^{11} \partial_\mu g_{11} = 0,
+$$
+$$
+\Gamma^2_{11} = \frac{1}{2} g^{22} (-\partial_\sigma g_{11}) = \frac{1}{2} \cdot \frac{\sigma^2}{2} \cdot \frac{2}{\sigma^3} = \frac{1}{2\sigma},
+$$
+$$
+\Gamma^1_{12} = \Gamma^1_{21} = \frac{1}{2} g^{11} \partial_\sigma g_{11} = \frac{1}{2} \cdot \sigma^2 \cdot \left( -\frac{2}{\sigma^3} \right) = -\frac{1}{\sigma},
+$$
+$$
+\Gamma^2_{12} = \Gamma^2_{21} = \frac{1}{2} g^{22} \left( \partial_\mu g_{22} + 0 - 0\right) = 0
+$$
+$$
+\Gamma^1_{22} = \frac{1}{2} g^{11} (-\partial_\mu g_{22}) = 0,
+$$
+$$
+\Gamma^2_{22} = \frac{1}{2} g^{22} \partial_\sigma g_{22} = \frac{1}{2} \cdot \frac{\sigma^2}{2} \cdot \left( -\frac{4}{\sigma^3} \right) = -\frac{1}{\sigma}
+$$
+
+In short,
+$$
+\Gamma^1_{11} = 0, \quad
+\Gamma^2_{11} = \frac{1}{2\sigma}, \quad
+\Gamma^1_{12} = \Gamma^1_{21} = -\frac{1}{\sigma}, \quad
+\Gamma^2_{12} = \Gamma^2_{21} = 0 \quad
+\Gamma^1_{22} = 0, \quad
+\Gamma^2_{22} = -\frac{1}{\sigma}.
+$$
+
+#### Part B
+
+Red text indicates a term is $0$.
+
+Let
+$$
+\gamma(t) = (a, be^{ct}).
+$$
+We confirm $\gamma(t)$ satisfied the geodesic equation in the first element:
+
+$$
+\frac{d^2 \gamma^\mu(t)}{dt^2} = \frac{d^2}{dt^2} a 
+= 0, 
+$$
+and
+\begin{aligned}
+- \sum_{i,j=1}^{n}
+\Gamma^\mu_{ij}(\gamma(t))
+\frac{d\gamma^i}{dt}
+\frac{d\gamma^j}{dt}
+&= - \left(
+    \color{red}{\Gamma^1_{11}} \frac{d \gamma^\mu}{dt} \frac{d \gamma^\mu}{dt}
+    + \Gamma^1_{12} \color{red}{\frac{d \gamma^\mu}{dt}} \frac{d \gamma^\sigma}{dt}
+    + \Gamma^1_{21} \frac{d \gamma^\sigma}{dt} \color{red}{\frac{d \gamma^\mu}{dt}}
+    + \color{red}{\Gamma^1_{22}} \frac{d \gamma^\sigma}{dt} \frac{d \gamma^\sigma}{dt}
+\right) \\
+& = 0.
+\end{aligned}
+
+The second element:
+$$
+\frac{d^2 \gamma^\sigma(t)}{dt^2} = \frac{d^2}{dt^2} be^{ct} = b c^2 e ^ {ct}
+$$
+and
+\begin{aligned}
+- \sum_{i,j=1}^{n}
+\Gamma^\sigma_{ij}(\gamma(t))
+\frac{d\gamma^i}{dt}
+\frac{d\gamma^j}{dt}
+&= - \left(
+    \Gamma^2_{11} \color{red}{\frac{d\gamma^\mu}{dt}} \frac{d \gamma^\mu}{dt}
+    + \Gamma^2_{12} \color{red}{\frac{d \gamma^\mu}{dt}} \frac{d \gamma^\sigma}{dt}
+    + \Gamma^2_{21} \frac{d \gamma^\sigma}{dt} \color{red}{\frac{d \gamma^\mu}{dt}}
+    + \Gamma^2_{22} \frac{d \gamma^\sigma}{dt} \frac{d \gamma^\sigma}{dt}
+\right) \\
+& = \frac{1}{be^{ct}} \left(   \frac{d}{dt} be^{ct} \right)   \\
+& = -\frac{1}{be^{ct}} \left(b c e ^ {ct}\right)^2 \\
+& = b c^2 e ^ {ct}.
+\end{aligned}
+
+So $\gamma(t)$ satisfies the geodesic equation. 
+
+#### Part C
+
+Now let us confirm that the following curve is a geodesic:
+
+$$
+\gamma(t) = (\mu(t), \sigma(t)) = \left( a \tanh(ct) + b,\; \frac{a\sqrt{2}}{2}\,\mathrm{sech}(ct) \right).
+$$
+
+In the first element:
+
+$$
+\frac{d^2}{dt^2} \gamma^\mu (t) =  \frac{d^2}{dt^2} a \tanh ct + b = \frac{d}{dt} (1 - \tanh^2 ct) ac = 2 \tanh ( 1 - \tanh^2 ct) ac^2,
+$$
+
+and
+\begin{aligned}
+- \sum^n_{i,j = 1} \Gamma^1_{ij} \frac{d \gamma^i}{dt} \frac{d \gamma^j}{dt} &= -0 -2 \left( - \frac{1}{\sigma}\right) \frac{d \gamma^1}{dt} \frac{d \gamma^2}{dt} - 0 \\
+&= 2 \tanh ct \left( 1 - \tanh^2 ct \right) a c^2.
+\end{aligned}
+
+In the second element:
+
+\begin{aligned}
+\frac{d^2}{dt^2} \gamma^\sigma (t) &= \frac{d^2}{dt^2} \frac{a}{\sqrt{2}} \operatorname{sech} ct \\
+&= \frac{d}{dt} \left(-\frac{ca}{\sqrt{2}} \tanh ct \operatorname{sech} ct \right) \\
+&= -\frac{ac^2}{\sqrt{2}} \left[ (1-\tanh^2 ct) \operatorname{sech} ct - \tanh^2 ct \operatorname{sech} ct \right] \\
+&= -\frac{ac^2}{\sqrt{2}} \left( \operatorname{sech} ct - 2 \tanh^2 ct \operatorname{sech} ct \right) \\
+&= -\frac{ac^2}{\sqrt{2}} \operatorname{sech} ct \left( 2 \operatorname{sech}^2 ct - 1 \right)
+\end{aligned}
+
+and
+\begin{aligned}
+- \sum^n_{i,j = 1} \Gamma^2_{ij} \frac{d \gamma^i}{dt} \frac{d \gamma^j}{dt} &= - \frac{1}{2\sigma} \left( \frac{d}{dt} \gamma^\mu    \right)^2  + \frac{1}{\sigma}  \left( \frac{d}{dt} \gamma^\sigma \right)^2 \\
+&= \frac{ac^2}{\sqrt{2}}  \cosh ct \left(  \operatorname{sech}^2 ct \right)^2 - \frac{ac^2}{\sqrt{2}} \operatorname{sech} ct \tanh^2ct \\
+&= -\frac{ac^2}{\sqrt{2}}  \left( \operatorname{sech}^3ct - \operatorname{sech} ct (1- \operatorname{sech}^2ct ) \right) \\
+&= -\frac{ac^2}{\sqrt{2}} \operatorname{sech} ct \left( 2 \operatorname{sech}^2 ct -1 \right).
+\end{aligned}
+
+So this second curve is also a geodesic.
+
+#### Part D
+
+
+
+Let's consider the geodesic curves between the gaussians with parameters $(0, 1)$ and $(0, 2)$, and between gaussians with parameters $(0, 4)$ and $(0, 8)$:
+
+
+$$
+\gamma_a(t) = (0, 2^t), \: t \in [0,1]; \; \gamma_b(t) = (0, 2^t), \: t \in [2,3]
+$$
+
+
+```{python}
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import numpy as np
+
+class NormalDistribution:
+    def __init__(self, mu, sigma):
+        self.mu = mu
+        self.sigma = sigma
+
+    def pdf(self, x):
+        return (1 / (self.sigma * np.sqrt(2 * np.pi))) * np.exp(-0.5 * ((x - self.mu) / self.sigma) ** 2)
+
+g_a_0 = NormalDistribution(0, 1)
+g_a_1 = NormalDistribution(0, 2)
+
+
+fig = go.Figure()
+
+x = np.linspace(-5, 5, 1000)
+
+fig.add_trace(go.Scatter(
+    x=x, y=g_a_0.pdf(x),
+    mode='lines',
+    name = r'$\gamma_a(0)$',
+))
+
+fig.add_trace(go.Scatter(
+    x=x, y=g_a_1.pdf(x),
+    mode='lines',
+    name = r'$\gamma_a(1)$',
+))
+
+fig.update_yaxes(range=[-.1, 0.6])
+#fig.update_layout(width=600, height=600)
+fig.update_layout(
+    title=r"$\text{PDFs }\gamma_a(0)\text{ and }\gamma_a(1)$"
+)
+fig.show()
+```
+
+
+```{python}
+
+g_b_0 = NormalDistribution(0, 4)
+g_b_1 = NormalDistribution(0, 8)
+
+fig = go.Figure()
+
+x = np.linspace(-5, 5, 1000)
+
+fig.add_trace(go.Scatter(
+    x=x, y=g_b_0.pdf(x),
+    mode='lines',
+    name = r'$\gamma_b(0)$',
+))
+
+fig.add_trace(go.Scatter(
+    x=x, y=g_b_1.pdf(x),
+    mode='lines',
+    name = r'$\gamma_b(1)$',
+))
+
+fig.update_yaxes(range=[-.2/6, 0.2])
+#fig.update_layout(width=600, height=600)
+fig.update_layout(
+    title=r"$\text{PDFs }\gamma_b(0)\text{ and }\gamma_b(1)$"
+)
+fig.show()
+```
+
+Before computing the geodesic distances, we first must compute the Riemannian norm of $\gamma'(t)$:
+
+$$
+\gamma'(t) = \left( 0, bc e^{ct} \right), \; \| \gamma'(t) \| = \sqrt{\langle  \gamma'(t), \gamma'(t) \rangle _g},
+$$
+$$
+< \gamma'(t), \gamma'(t)>_g = \gamma'(t)^T g \gamma'(t) = \sigma' \frac{2}{\sigma^2} \sigma' = \frac{2}{b^2 e^{ct2}} b^2 c^2 e^{ct2} = 2c^2,
+$$
+$$
+\implies \| \gamma'(t) \|  = \sqrt{2}c.
+$$
+
+
+Our geodesic distances 
+
+$$
+L(\gamma_a) = \int_0^1 \| \gamma_a'(t) \| dt = \int_0^1 \sqrt{2}c  dt = \sqrt{2} \ln 2
+$$
+
+$$
+L(\gamma_b) = \int_2^3 \| \gamma_b'(t) \| dt = \int_2^3 \sqrt{2}c dt = \sqrt{2} \ln 2.
+$$
+
+
+```{python}
+fig = go.Figure()
+
+fig.add_trace(go.Scatter(
+    x=[0, 0], y=[1, 2],
+    mode='lines+markers',
+    name = r"$\gamma_a$"
+))
+
+fig.add_trace(go.Scatter(
+    x=[0, 0], y=[4, 8],
+    mode='lines+markers',
+    name = r"$\gamma_b$"
+))
+
+fig.update_yaxes(range=[0, 10])
+#fig.update_layout(width=600, height=600)
+fig.update_layout(
+    title=r"$\text{Curves }\gamma_a\text{ and }\gamma_b\text{ in the Poincaré Half Plane}$"
+)
+fig.show()
+```
+
+
+It seems like the length of these vertical geodesic curves in invariant to scaling both standard deviations by the same factor. This is really interesting
+
+#### Part E
+
+Now let us consider two new geodesic curves $(\gamma_1, \gamma_2)$ between the gaussians with parameters $(-1, 1)$ and $(1,1)$, and $(-2, 2)$ and $(2, 2)$ respectively. We will use the following class of geodesic curve:
+$$
+\gamma(t) = (\mu(t), \sigma(t)) = \left( a \tanh(ct) + b,\; \frac{a\sqrt{2}}{2}\,\mathrm{sech}(ct) \right).
+$$
+Let's start with finding the parameters of $\gamma_1(t), t \in [-1, 1]$. Since our curve is symmetric, $b = 0$, but finding the other two parameters takes some algebra. To help solve, we will limimt our first curve to $t \in [-1, 1]$:
+
+$$
+a_1\tanh(c_1) = 1, \; \frac{a_1}{\sqrt{2}} \operatorname{sech}(c_1) = 1 \implies \frac{a_1 \tanh(c_1)}{\frac{a_1}{\sqrt{2}}\operatorname{sech}(c_1)} = 1
+$$
+$$
+\implies \sinh (c_1) = \frac{1}{\sqrt{2}} \implies c_1 = \sinh^{-1} (\frac{1}{\sqrt{2}}) \approx 0.6585.
+$$
+To find $a$ is now straight forward:
+
+$$
+a_1 = \frac{1}{\tanh (c_1)} \approx 1.7321.
+$$
+
+So
+$$
+\gamma_1 (t) = (\mu(t), \sigma(t)) = \left( a_1 \tanh(c_1t),\; \frac{a_1}{\sqrt{2}}\,\mathrm{sech}(c_1t) \right).
+$$
+
+Finding the parameters of $\gamma_2(t), t \in [-1, 1]$ is similar. $b$ is still $0$, and curiously, we keep the same $c$:
+
+$$
+a_2\tanh(c_2) = 2, \; \frac{a_2}{\sqrt{2}} \operatorname{sech}(c_2) = 2 \implies \frac{a_2 \tanh(c_2)}{\frac{a_2}{\sqrt{2}}\operatorname{sech}(c_2)} = \frac{2}{2} = 1
+$$
+
+$$
+\implies \sinh (c_2) = \frac{1}{\sqrt{2}} \implies c_2 = \sinh^{-1} (\frac{1}{\sqrt{2}}) \approx 0.6585.
+$$
+
+Finding $a$ is easy:
+$$
+a = \frac{2}{\tanh(c)} \approx 3.4641.
+$$
+
+Lets plot these:
+
+
+```{python}
+fig = go.Figure()
+
+g_1_0 = NormalDistribution(-1, 1)
+g_1_1 = NormalDistribution(1, 1)
+
+x = np.linspace(-8, 8, 1000)
+
+fig.add_trace(go.Scatter(
+    x=x, y=g_1_0.pdf(x),
+    mode='lines',
+    name = r'$\gamma_1(0)$',
+))
+
+fig.add_trace(go.Scatter(
+    x=x, y=g_1_1.pdf(x),
+    mode='lines',
+    name = r'$\gamma_1(1)$',
+))
+
+fig.update_yaxes(range=[-.1, 0.6])
+#fig.update_layout(width=600, height=600)
+fig.update_layout(
+    title=r"$\text{PDFs }\gamma_1(0)\text{ and }\gamma_1(1)$"
+)
+fig.show()
+```
+
+```{python}
+fig = go.Figure()
+
+g_2_0 = NormalDistribution(-2, 2)
+g_2_1 = NormalDistribution(2, 2)
+
+x = np.linspace(-8, 8, 1000)
+
+fig.add_trace(go.Scatter(
+    x=x, y=g_2_0.pdf(x),
+    mode='lines',
+    name = r'$\gamma_2(0)$',
+))
+
+fig.add_trace(go.Scatter(
+    x=x, y=g_2_1.pdf(x),
+    mode='lines',
+    name = r'$\gamma_2(1)$',
+))
+
+fig.update_yaxes(range=[-.1, 0.6])
+#fig.update_layout(width=600, height=600)
+fig.update_layout(
+    title=r"$\text{PDFs }\gamma_2(0)\text{ and }\gamma_2(1)$"
+)
+fig.show()
+```
+
+```{python}
+fig = go.Figure()
+
+ts = np.linspace(-1, 1, 1000)
+
+c = 0.658478948462
+a_1 = 1.73205080757
+a_2 = 3.46410161514
+
+def sech(x):
+    return 1 / np.cosh(x)
+
+x_1 = a_1 * np.tanh(c * ts)
+y_1 = a_1 / np.sqrt(2) * sech(c * ts)
+
+x_2 = a_2 * np.tanh(c * ts)
+y_2 = a_2 / np.sqrt(2) * sech(c * ts)
+
+fig.add_trace(go.Scatter(
+    x=x_1, y=y_1,
+    mode='lines',
+    name = r"$\gamma_a$"
+))
+
+fig.add_trace(go.Scatter(
+    x=[x_1[0], x_1[-1]],
+    y=[y_1[0], y_1[-1]],
+    mode='markers',
+    marker=dict(color='blue'),
+    showlegend=False
+))
+
+fig.add_trace(go.Scatter(
+    x=x_2, y=y_2,
+    mode='lines',
+    name = r"$\gamma_b$",
+    line=dict(color='red')
+))
+
+fig.add_trace(go.Scatter(
+    x=[x_2[0], x_2[-1]],
+    y=[y_2[0], y_2[-1]],
+    mode='markers',
+    marker=dict(color='red'),
+    showlegend=False
+))
+
+
+fig.update_yaxes(range=[0, 4])
+fig.update_xaxes(range=[-3, 3])
+#fig.update_layout(width=600, height=600)
+fig.update_layout(
+    title=r"$\text{Curves }\gamma_a\text{ and }\gamma_b\text{ in the Poincaré Half Plane}$"
+)
+fig.show()
+```
+
+Now to find the geodedic distances:
+
+\begin{aligned}
+\| \gamma'(t)\|_g^2 &= \langle \gamma', \gamma' \rangle_g = \gamma'^T g \gamma' = \frac{1}{\sigma^2} (\mu^2 + 2 \sigma^2) \\
+&= \frac{2}{a^2}\cosh^2 (ct) \left( a^2 c^2 \operatorname{sech}^4 (ct) + 2 \frac{a^2}{2}c^2 \tanh^2 (ct) \operatorname{sech}^2 (ct) \right) \\
+&= 2c^2 \left( \operatorname{sech}^2 (ct) + \tanh^2 (ct) \right) \\
+&= 2c^2 \left( \operatorname{sech}^2 (ct) + 1 -  \operatorname{sech}^2 (ct)\right) \\
+&= 2c^2
+\end{aligned}
+
+This is fascinating. The norm of the geodesic for both types of geodesic equations is $\sqrt{2}c$. I wonder if there is anything inherent to the goedesic differential equation which would make things have to be this way.
+
+Since our parameter $c$ is the same for both geodesic curves, we have
+
+$$
+\implies L(\gamma) = \int_{-1}^1 \sqrt{2}c dt = 2 \sqrt{2} c = 2 \sqrt{2} \operatorname{arcsinh} \left( \frac{1}{\sqrt{2}}\right).
+$$
+
+It seems that the geodesic length between two distributions on the Poincaré plane that are invarient to parameter scaling as long as the geodesic curve connecting the two distributions has its highest standard deviation at $\mu = 0$. Below is an example.
+
+For curves which have a standard deviation peak at $\mu = b$, I believe the same effect can be achieved by subtracting $b$ from $\mu_1$ and $\mu_2$ of the first and second distribution respectively, scaling the parameters by the desired constant, and then adding $b$ back to $\mu_1$ and $\mu_2$.
+
+```{python}
+fig = go.Figure()
+
+ts = np.linspace(-1.5, .5, 1000)
+
+c = 0.658478948462
+a_1 = 1.73205080757
+a_2 = 3.46410161514
+
+def sech(x):
+    return 1 / np.cosh(x)
+
+x_1 = a_1 * np.tanh(c * ts)
+y_1 = a_1 / np.sqrt(2) * sech(c * ts)
+
+x_2 = a_2 * np.tanh(c * ts)
+y_2 = a_2 / np.sqrt(2) * sech(c * ts)
+
+fig.add_trace(go.Scatter(
+    x=x_1, y=y_1,
+    mode='lines',
+    name = r"$\gamma_a$"
+))
+
+fig.add_trace(go.Scatter(
+    x=[x_1[0], x_1[-1]],
+    y=[y_1[0], y_1[-1]],
+    mode='markers',
+    marker=dict(color='blue'),
+    showlegend=False
+))
+
+fig.add_trace(go.Scatter(
+    x=x_2, y=y_2,
+    mode='lines',
+    name = r"$\gamma_b$",
+    line=dict(color='red')
+))
+
+fig.add_trace(go.Scatter(
+    x=[x_2[0], x_2[-1]],
+    y=[y_2[0], y_2[-1]],
+    mode='markers',
+    marker=dict(color='red'),
+    showlegend=False
+))
+
+
+fig.update_yaxes(range=[0, 4])
+fig.update_xaxes(range=[-3, 3])
+#fig.update_layout(width=600, height=600)
+fig.show()
+```
+
+##### Part F
+
+We already found the distance between PDF $A$ with params $(-1, 1)$ and $B$ with params $(1, 1)$ as $2 \sqrt{2} c$. Since we only have two points, finding the Frechet mean is easy, we just need to find the point M which is equidistant to both A and B, which will be halfway through the goedesic. We both know this will happen at $t = 0$, but lets prove it:
+
+$$
+D(t) = \int_{-1}^t \| \gamma'(t) \| dt = (t + 1) \sqrt{2} c, \; \frac{D(t)}{2 \sqrt{2} c} \frac{1}{2} \implies \frac{t+1}{2} = \frac{1}{2} \implies 2 = 0.
+$$
+
+So the Frechet mean is at $\gamma(0) = (0, 1.2247)$. Below is a graph with the PDFs and their mean.
+```{python}
+fig = go.Figure()
+
+g_1_0 = NormalDistribution(-1, 1)
+g_1_1 = NormalDistribution(1, 1)
+mean = NormalDistribution(0, 1.2247)
+
+x = np.linspace(-8, 8, 1000)
+
+fig.add_trace(go.Scatter(
+    x=x, y=g_1_0.pdf(x),
+    mode='lines',
+    name = r'$\gamma_1(0)$',
+))
+
+fig.add_trace(go.Scatter(
+    x=x, y=g_1_1.pdf(x),
+    mode='lines',
+    name = r'$\gamma_1(1)$',
+))
+
+fig.add_trace(go.Scatter(
+    x=x, y=mean.pdf(x),
+    mode='lines',
+    name = 'Frechet Mean',
+    line=dict(color='purple')
+))
+
+fig.update_yaxes(range=[-.1, 0.6])
+#fig.update_layout(width=600, height=600)
+fig.update_layout(
+    title=r"$\text{PDFs }\gamma_1(0)\text{ and }\gamma_1(1) with their Frechet Mean}$"
+)
+fig.show()
+```
+
+It is very interesting how the Frechet mean has a higher standard deviation than the two means. I wonder if this corresponds to the middle of the earth movering process of distribution transportation.
+
+## Question 3
+
+First, let's build our binary classifier and gradient descent functions. For logistic regression, our classifier takes the form
+$$
+p_i = \frac{1}{1+e^{-(\vec{x}_i^T {\theta})}},
+$$
+where
+$$
+\vec{x}_i1 = 1,
+$$
+and p_i is the estimated probability that the $i$-th instance of our data is in class 1. We will often let $z = \vec{x}_i^T {\theta}$.
+$$
+p = \frac{1}{1+e^{-z}} = \frac{e^z}{e^z + 1} \iff \left( e^z + 1\right) p = e^z 
+$$
+$$
+\iff p e^z + p = e^z \iff p = e^z - e^ z p = e^z (1-p)
+$$
+
+$$
+\iff \frac{p}{1-p} = e^z.
+$$
+
+We will use log likelihood to optimize our parameters:
+$$
+\ell (\theta) = \sum y_i \log p + (1-y_i) \log \left( 1 - p \right).
+$$
+
+We will rearange $\ell (\theta)$ for the $i$-th prediction and do some rearangeing to help us have an easier time finding the gradient. 
+
+\begin{aligned}
+\ell_i (\theta) &= y \log p + (1-y) \log \left( 1 - p \right) \\
+&= y \log p + \log \left( 1 - p \right) - y \log \left( 1 - p \right) \\
+&= \log \left( 1 - p \right) + y \log \left( \frac{p}{ 1 - p} \right) \\
+&= \log \left( 1 - \frac{1}{1+e^{-z}}  \right) + y z \\
+&= \log \left( \frac{e^{-z}}{1+e^{-z}} \right) + y z \\
+&= \log e^{-z} - \log \left( 1 + e^{-z} \right) + y z \\
+&= -z - \log \left( 1 + e^{-z} \right) + y z \\
+&= -z - \log \left(e^{-z} \left[ e^z + 1 \right] \right) + y z \\
+&= -z - \log \left(e^{-z} \right) - \log \left( e^z + 1 \right)+ y z \\
+&= -z + z - \log \left( e^z + 1 \right)+ y z \\
+&= y z - \log \left( e^z + 1 \right)
+\end{aligned}
+
+Remembering that $z = \vec{x}_i^T {\theta}$, we compute the gradient:
+
+\begin{aligned}
+\partial_\theta \ell_i (\theta) &= \partial_\theta y_i \vec{x}_i^T {\theta} - \partial_\theta \log \left( e^{\vec{x}_i^T {\theta}} + 1 \right) \\
+&= y_i \vec{x_i} - \frac{\vec{x_i} e^{\vec{x}_i^T {\theta}}}{e^{\vec{x}_i^T {\theta}} +1} \\
+&= y_i \vec{x_i} - \vec{x_i} p_i \\
+&= x_i (y_i - p_i).
+\end{aligned}
+
+This is very manageable!
+
+
+```{python}
+import math
+import numpy as np
+# for numerical stability, we use a modified log function 
+def sigmoid(z):
+    return np.where(z >= 0, 1/(1+np.exp(-z)), np.exp(z)/(1+np.exp(z)))
+
+class LogisticRegressor():
+    def __init__(self, num_features):
+        self.W = np.random.randn(num_features + 1)
+    def predict(self, X: np.ndarray):
+        x_b = np.insert(X, 0, 1, axis=-1)
+
+        z = x_b @ self.W
+
+        return sigmoid(z)
+    
+    def loglikelihood(self, X: np.ndarray, y: np.ndarray):
+        p = self.predict(X)
+
+        x_b = np.insert(X, 0, 1, axis=-1)
+
+        z = x_b @ self.W
+
+        return np.average(y * z - np.logaddexp(0, z))
+    
+    def train_one_step(self, X: np.ndarray, y: np.ndarray, lr = 0.01):
+        p = self.predict(X)
+
+        x_b = np.insert(X, 0, 1, axis=-1)
+
+        z = x_b @ self.W
+
+        G = (y - p)[:, np.newaxis] * x_b
+
+        grad = np.mean(G, axis=0)
+
+        likelihood = self.loglikelihood(X, y)
+
+        self.W += lr * grad # gradient ascent
+
+        return likelihood, G
+
+    def train_one_epoch_natural(self, X: np.ndarray, y: np.ndarray, lr = 0.01):
+        p = self.predict(X)
+
+        x_b = np.insert(X, 0, 1, axis=-1)
+
+        z = x_b @ self.W
+
+        G = (y - p)[:, np.newaxis] * x_b
+        grad = np.mean(G, axis=0)
+        F = G.T @ G / len(y) + 1e-4 * np.eye(grad.shape[0]) # making sure our matrix stays invertible
+
+        natural_grad = np.linalg.inv(F) @ grad
+        likelihood = self.loglikelihood(X, y)
+        self.W += natural_grad # * lr
+
+        return likelihood, G
+```
+
+
+```{python}
+import torchvision.datasets as datasets
+import matplotlib.pyplot as plt
+
+mnist_train = datasets.MNIST(root="./data", train=True, download=True)
+
+sixes = mnist_train.data[mnist_train.targets == 6]
+twos = mnist_train.data[mnist_train.targets == 2]
+sixes_flat = sixes.flatten(start_dim=1)
+twos_flat = twos.flatten(start_dim=1)
+
+X = np.concatenate([sixes_flat, twos_flat], axis=0).astype(np.float32) / 255.0
+y = np.concatenate([np.zeros(len(sixes_flat)), np.ones(len(twos_flat))], axis=0)
+
+lr_normal = LogisticRegressor(num_features=28*28)
+lr_natural = LogisticRegressor(num_features=28*28)
+
+lr_natural.W = lr_normal.W.copy()
+
+likelihoods_normal = []
+likelihoods_natural = []
+grads = []
+```
+
+```{python}
+
+for i in range(50):
+    ll_normal, _ = lr_normal.train_one_step(X, y, lr=0.1)
+    ll_natural, _ = lr_natural.train_one_epoch_natural(X, y)
+    likelihoods_normal.append(ll_normal)
+    likelihoods_natural.append(ll_natural)
+```
+
+```{python}
+import plotly.graph_objects as go
+fig = go.Figure()
+
+fig.add_trace(go.Scatter(
+    y=likelihoods_normal,
+    mode='lines',
+    name='Normal Gradient'
+))
+
+fig.add_trace(go.Scatter(
+    y=likelihoods_natural,
+    mode='lines',
+    name='Natural Gradient'
+))
+
+fig.update_layout(
+    title='Log Likelihoood',
+    xaxis_title='Epoch',
+    yaxis_title='Log-Likelihood'
+)
+
+fig.show()
+```
+
+Incredible! Using the natural gradient makes training converge much faster than without the normal gradient. Running them with different random initializations shows that the natural gradient always converges to close to zero after only 10-25 iterations, while it takes the normal gradient much longer to lower before leveling out noticably below 0.

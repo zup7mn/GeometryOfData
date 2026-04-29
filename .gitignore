@@ -1,0 +1,14 @@
+*.pth
+*.pt
+*.zip
+*.lpts
+*.quarto*
+HW3/J_2
+HW3/J_16
+HW3/j_tea_4
+HW3/j_tea_16
+**/data/**
+HW4/HW4_files/
+HW5/HW5_files/
+.vscode
+.DS_Store
