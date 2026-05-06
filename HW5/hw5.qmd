@@ -16,6 +16,10 @@ import matplotlib.pyplot as plt
 np.random.seed(42)
 
 def gauss(x, mu, omega):
+
+    if len(x.shape) == 1:
+        x = x.reshape((1, x.shape[0]))
+
     return (0.5 * omega / np.pi) * np.exp(-0.5 * omega * np.sum((x - mu)**2, axis = -1))
 
 def grad_gauss(x, mu, omega):
@@ -31,12 +35,17 @@ def phi(x):
 
 # This computes the derivative mapping transpose, times a vector v, that is: dphi(x)^T * v
 def dphi_transpose_dot_v(x, v):
+
+    if len(x.shape) == 1:
+        x = x.reshape((1, x.shape[0]))
+
+
     return np.column_stack(
         (
             v[:, 0] + v[:, 1] * np.pi * np.cos(4.0 * np.pi * x[:, 0]),      # v_1 * 1 + v_2 * pi cos (4 pi x_1)
             v[:, 1]                                                         # v_1 * 0 + v_2 * 1
         )
-    )
+    ) 
 
 # Parameters for the pdf
 mu1 = np.array([1.0, 1.0])
@@ -287,6 +296,9 @@ plt.show()
 
 Right off the bat, it seems like our sampling rate is significantly better!
 
+
+### Part C: Experiments with different $\sigma^2$
+
 ```{python}
 # Make grid for plotting (shared across all subplots)
 xcoord = np.linspace(-3.0, 3.0, 201)
@@ -308,7 +320,7 @@ for ax, var in zip(axes.flatten(), [0.1, 0.5, 1, 2]):
     ax.contourf(xx, yy, dens, levels = levels, cmap = "gist_heat")
 
     samples = sampler.samples
-    ax.scatter(samples[:, 0], samples[:, 1], s = 1, c = 'white')
+    ax.scatter(samples[:, 0], samples[:, 1], s = .25, c = 'white')
 
     ax.set_xlim(-3, 3)
     ax.set_ylim(-3, 3)
@@ -321,4 +333,197 @@ plt.show()
 
 Using a dependent proposal distribution gives us much better samples all around. Our acceptance rate is higher across the board, except at our highest tested variance ($\sigma^2 = 2$). At our middling variances ($\sigma^2 = 0.5$ and $\sigma^2 = 1$), our generated samples seem to loose their bias towards the middle that we observed earlier. The samples gerneated with our lowest variance ($\sigma^2 = 0.1$) only generate at around one mode of our target distribution, but at least it is not stuck in the center away from both modes this time!
 
-s
+## Problem 3: Langevin Monte Carlo Sampler
+
+We will use the Metropolis-adjusted Langevin Algorith to generate samples from our target distribution. The Langevin Algorithm is
+$$
+x_k = x_{k-1} + \gamma \nabla \log f(x_{k-1}) + \sqrt{2 \gamma} \xi, \; \xi \sim N(0, 1),
+$$
+so $x_k \sim N(x_{k-1} + \gamma \nabla \log f(x), 2  \gamma)$.
+
+Our acceptance probability will be
+
+$$
+\alpha(x_{k-1}), x_k) = \min \left\{ 1, \frac{f(x_{k-1})q(x_k | x_{k-1})}{f(x_k)q(x_{k-1}|x_k)} \right\}
+$$
+where
+$$
+q(y | x) \propto \exp \left(  \frac{|| y - (x + \gamma \nabla \log f(x)) ||^2}{2 \cdot 2\gamma}   \right).
+$$
+
+```{python}
+
+
+def grad_U(x):
+    e1 = lambda1 * gauss(x, mu1, omega1)
+    e2 = lambda2 * gauss(phi(x), mu2, omega2)
+    
+    grad_e1 = lambda1 * grad_gauss(x, mu1, omega1)
+    grad_e2 = lambda2 * dphi_transpose_dot_v(x, grad_gauss(phi(x), mu2, omega2))
+
+    a = (-1.0 / (e1 + e2 + epsilon)).reshape((e1.shape[0], 1))
+
+    return a.repeat(2, axis = 1) * (grad_e1 + grad_e2)
+
+
+class MALS():
+    def __init__(self, N = 10000, proposal_var = 1, proposal_mean = np.array([0,0]), gamma = 0.2):
+        self.N = N
+        self.acceptance_ps = []
+        self.grad_us = []
+        self.gamma = gamma
+    # @staticmethod
+    def proposal(self, x, mean = None, var = None):
+        if mean is None:
+            mean = self.proposal_mean
+        if var is None:
+            var = self.proposal_var
+
+        return gauss(x, mean, 1 / var)
+
+    def generate_proposal(self, mean = None, var = None):
+        if mean is None:
+            mean = self.proposal_mean
+        if var is None:
+            var = self.proposal_var
+
+        return np.random.normal(mean, var * np.array([1,1]))
+
+    def target(self, x): # not normalized!!
+        return np.exp(-U(x))
+
+    def sample(self):
+        num_samples = self.N
+        self.samples = np.zeros((num_samples,2))
+        samples = self.samples
+        self.accepted = np.zeros(num_samples - 1)
+
+        gamma = self.gamma
+
+        for k in range(1, num_samples):
+            x_last = samples[k-1]
+
+            self.grad_us.append(grad_U(x_last))
+
+            y = self.generate_proposal(x_last, 2 * gamma)
+
+
+            mean_frd = x_last + gamma * grad_U(x_last)
+
+
+            mean_back = y + gamma * grad_U(y)
+
+            u = np.random.uniform(0,1)
+
+            A = self.target(y) * self.proposal(mean_frd, mean = y, var = 2 * gamma) / (self.target(x_last) * self.proposal(y, mean= mean_frd, var = 2 * gamma))
+
+            self.acceptance_ps.append(A)
+
+            if u < A:
+                samples[k] = y
+                self.accepted[k - 1] = 1
+            else:
+                samples[k] = x_last
+```
+
+### Part A: Acceptance Rate
+
+```{python}
+
+
+
+N = 10_000
+sampler = MALS(proposal_var = 1)
+sampler.sample()
+accept_rate = 100 * sampler.accepted.sum() / N
+print(f"Acceptance rate: {accept_rate: .2f}%")
+
+print(sampler.grad_us)
+
+```
+
+### Part B: Plotting
+
+```{python}
+# Make grid for plotting
+xcoord = np.linspace(-3.0, 3.0, 201)
+ycoord = np.linspace(-3.0, 3.0, 201)
+xx, yy = np.meshgrid(xcoord, ycoord)
+
+# reshape xx,yy coordinates into N x 2 tensor
+coords = np.column_stack((xx.flatten(), yy.flatten()))
+
+# compute (unnormalized) density function
+dens = np.exp(-U(coords))
+
+# reshape back to the xx,yy grid
+dens = dens.reshape(xx.shape)
+
+# Contour plot
+levels = np.linspace(np.max(dens) / 100, np.max(dens), 99)
+plt.figure(figsize = (10, 10))
+ax = plt.axes()
+ax.set_facecolor("black")
+plt.contourf(xx, yy, dens, levels = levels, cmap = "gist_heat")
+
+samples = sampler.samples
+plt.scatter(samples[:, 0], samples[:,1], s = 1, c = 'white')
+
+plt.title("Scattered Samples Generated Dependently \n" + r"$\gamma" + "= 0.2$  Acceptance rate: " + f"{accept_rate: .2f}%")
+plt.grid(color='white', linestyle = '--')
+
+plt.axis('equal')
+plt.show()
+```
+
+This does a lot better. Usually at $\gamma = 0.2$, the sampler does a decent job reaching both modes. 
+
+### Part C: Experiments with different $\gamma$
+
+```{python}
+# Make grid for plotting (shared across all subplots)
+xcoord = np.linspace(-3.0, 3.0, 201)
+ycoord = np.linspace(-3.0, 3.0, 201)
+xx, yy = np.meshgrid(xcoord, ycoord)
+coords = np.column_stack((xx.flatten(), yy.flatten()))
+dens = np.exp(-U(coords)).reshape(xx.shape)
+levels = np.linspace(np.max(dens) / 100, np.max(dens), 99)
+
+fig, axes = plt.subplots(2, 2, figsize=(8, 8), constrained_layout=True)
+
+for ax, gamma in zip(axes.flatten(), [0.1, 0.15, 2.5, 3]):
+    sampler = MALS(gamma = 0.2,)
+    sampler.sample()
+    accept_rate = 100 * sampler.accepted.sum() / N
+    print(f"Proposal Variance: {var}    Acceptance rate: {accept_rate: .2f}%")
+
+    ax.set_facecolor("black")
+    ax.contourf(xx, yy, dens, levels = levels, cmap = "gist_heat")
+
+    samples = sampler.samples
+    ax.scatter(samples[:, 0], samples[:, 1], s = .25, c = 'white')
+
+    ax.set_xlim(-3, 3)
+    ax.set_ylim(-3, 3)
+    ax.set_title("Scattered Samples Generated Dependently \n" + r"$\gamma" + f"= {gamma}$  Acceptance rate: " + f"{accept_rate: .2f}%")
+    ax.grid(color='white', linestyle = '--')
+    ax.set_aspect('equal')
+
+plt.show()
+```
+
+Running the above a few times, I see that usually we sucessfully sample from both modes, but sometimes we over sample from one. There doesn't seem to be a certain $\gamma$ that consistently works better than the others from the ones sampled above.
+
+## Problem 4: Hamiltonian Monte Carlo Sampler
+
+Before implementing a Hamiltonian Monte Carlo Sampler, it would be helpful to recall what the hamiltonian 
+
+```{python}
+class HMC:
+    def __init__(self, N = 100000, sigma = 1, step_size = 0.1):
+        self.N = N
+        self.sigma = sigma
+        self.step_size = step_size
+
+    def 
+```
