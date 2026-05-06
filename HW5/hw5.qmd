@@ -28,7 +28,7 @@ def grad_gauss(x, mu, omega):
 
 
 def phi(x):
-    if len(x.shape) == 1:
+    if len(x.shape) == 1 or x.shape[0] == 0:
         return np.column_stack((x[0], x[1] + 0.25 * np.sin(4.0 * np.pi * x[0])))
     else:
         return np.column_stack((x[:, 0], x[:, 1] + 0.25 * np.sin(4.0 * np.pi * x[:, 0])))
@@ -516,14 +516,155 @@ Running the above a few times, I see that usually we sucessfully sample from bot
 
 ## Problem 4: Hamiltonian Monte Carlo Sampler
 
-Before implementing a Hamiltonian Monte Carlo Sampler, it would be helpful to recall what the hamiltonian 
+Before implementing a Hamiltonian Monte Carlo Sampler, it would be helpful to recall what the hamiltonian equations are. I refer heavily to "MCMC using Hamiltonian dynamics" by Radford M. Neal.
+
+$$
+H(q,p) = U(q) + K(p),
+$$
+where $H$ is the total energy of the system and $U$ and $K$ refer to potential and kinetic energy respectively. Here, we will define the potential energy as the negative log probability density of the distributions $f$ for which we are trying to sample. We usually define kinetic energy as
+$$
+K(p) = p^T M^{-1} p / 2,
+$$
+where $M$ is a positive semi-definite "mass matrix". For our purposes, we let $M = \sigma^2 I$, and as a result,
+$$
+K(p) = ||p||^2 / 2 \sigma^2.
+$$
+
+Now we can write hamilton's equations in differential form as follows:
+
+\begin{aligned}
+\frac{d q_i}{dt} &= \partial_{p_i} H = \partial_{p_i} K(p) = p \\
+\frac{d p_i}{dt} &= \partial_{q_i} H = - \partial_{q_i} U(q) = - \partial_{q_i}  - \log f(q)
+\end{aligned}
+
+When we write $f(x)$ as $\frac{1}{c} \exp(-U)$, it becomes clear why we take the negative log of the distribution for $U$.
+
+
+We use the leapfrog integrator to attain even better energy conversion. The leapfrog algorith works as follows:
+
+\begin{aligned}
+p_i(t + \epsilon / 2 ) &= p_i(t) - (\epsilon / 2) \partial_{q_i} U (q(t)) \\
+q_i(t + \epsilon) &= q_i(t) + \epsilon \frac{p_i(t + \epsilon / 2 )}{m_i} \\
+p(t + \epsilon) &= p(t + \epsilon / 2) - (\epsilon / 2) \partial_{q_i} U(q(t+\epsilon))
+\end{aligned}
+
 
 ```{python}
 class HMC:
-    def __init__(self, N = 100000, sigma = 1, step_size = 0.1):
+    def __init__(self, N = 1000, sigma = 10, epsilon = 0.01, T = 1000):
         self.N = N
         self.sigma = sigma
-        self.step_size = step_size
+        self.samples = np.zeros((N,2))
+        self.accepted = np.zeros(N)
+        self.alphas = np.zeros(N)
+        self.epsilon = epsilon
+        self.T = T
 
-    def 
+    def Hamiltonian_generate(self, current_q, current_step):
+        epsilon = self.epsilon
+        T = self.T
+        
+        q = current_q
+        p = np.random.randn(len(q))
+        current_p = p
+
+        p = p - epsilon * grad_U(q) / 2 
+
+
+        for i in range(T - 1):
+            
+            # Make a full step for the poistion
+            
+            q = q + epsilon * p
+
+            # Make a full step for momentum, except at the end of the trajectory
+
+            p = p - epsilon * grad_U(q)
+        
+        # Now make another half step for the momentum here at the end
+
+        p = p - epsilon * grad_U(q) / 2
+
+        # Negate momentum at the end to make the proposal symmetric ?? (from paper i don't know why thought)
+
+        p = -p
+
+        current_U = U(current_q)
+        current_K = np.linalg.norm(current_p)**2 / (2 * self.sigma **2)
+        proposed_U = U(q)
+        proposed_K = np.linalg.norm(p)**2 / (2 * self.sigma **2)
+
+        # Accept or reject based on energy converation at the end of the trajectory
+        # alpha = exp (H(q, p) - H(q*,p*))
+        alpha = np.exp(current_U + current_K - proposed_U + proposed_K)
+
+        ## debug
+        self.alphas[current_step] = alpha.item()
+
+        if np.random.uniform(0, 1) < alpha:
+            self.accepted[current_step] = 1
+
+            return q    # accept
+        else:
+            return current_q # reject
+        
+    def sample(self):
+        
+        q_0 = np.random.randn(2)
+
+        self.samples[0] = q_0
+
+        for i in range(1, self.N):
+            q_last = self.samples[i-1]
+            q_next = self.Hamiltonian_generate(q_last, i)
+
+            self.samples[i] = q_next
+
+            # ## degub
+            # if i > 998 == 0:
+            #     print(i)
 ```
+
+```{python}
+sampler = HMC(N = 10_000, sigma = 0.1, epsilon = 0.01, T = 1000)
+sampler.sample()
+accept_rate = 100 * sampler.accepted.sum() / N
+
+print(f"Acceptance rate: {accept_rate: .2f}%")
+
+# print(sampler.alphas.max())
+```
+
+```{python}
+# Make grid for plotting
+xcoord = np.linspace(-3.0, 3.0, 201)
+ycoord = np.linspace(-3.0, 3.0, 201)
+xx, yy = np.meshgrid(xcoord, ycoord)
+
+# reshape xx,yy coordinates into N x 2 tensor
+coords = np.column_stack((xx.flatten(), yy.flatten()))
+
+# compute (unnormalized) density function
+dens = np.exp(-U(coords))
+
+# reshape back to the xx,yy grid
+dens = dens.reshape(xx.shape)
+
+# Contour plot
+levels = np.linspace(np.max(dens) / 100, np.max(dens), 99)
+plt.figure(figsize = (10, 10))
+ax = plt.axes()
+ax.set_facecolor("black")
+plt.contourf(xx, yy, dens, levels = levels, cmap = "gist_heat")
+
+samples = sampler.samples
+plt.scatter(samples[:, 0], samples[:,1], s = 1, c = 'pink')
+
+plt.title("Scattered Samples Generated Dependently \n" + r"$\gamma" + "= 0.2$  Acceptance rate: " + f"{accept_rate: .2f}%")
+plt.grid(color='white', linestyle = '--')
+
+plt.axis('equal')
+plt.show()
+```
+
+
